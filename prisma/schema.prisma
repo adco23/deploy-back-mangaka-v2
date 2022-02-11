@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum State {
+  Finished
+  on_going
+  on_pause
+}
+
+model User {
+  id          String  @id @default(uuid())
+  name        String
+  username    String  @unique
+  avatar      Bytes
+  password    String? // revisar el tipo por algo como Cypher
+  about       String
+  coins       Int     @default(0)
+  creatorMode Boolean @default(false)
+  email       String  @unique
+  library     Int[]
+  favorites   Int[]
+  wishList    Int[]
+  created     Manga[] // A user can have many mangas
+  googleId    Boolean
+}
+
+model Manga {
+  id        Int       @id @default(autoincrement())
+  title     String    @unique
+  synopsis  String
+  author    User      @relation(fields: [authorId], references: [id]) //A manga can have one User
+  authorId  String
+  image     Bytes
+  createdAt DateTime  @default(now())
+  uptadedAt DateTime  @updatedAt
+  genre     String[]
+  rating    Float
+  chapter   Int
+  chapters  Chapter[]
+  state     String
+}
+
+model Chapter {
+  id      Int      @id @default(autoincrement())
+  title   String
+  points  Int
+  coverImage Bytes
+  images  Bytes[]
+  manga   Manga    @relation(fields: [mangaId], references: [id]) // A manga can have one User
+  mangaId Int
+  usersId String[]
+  price Int
+  orderConstant InternalOrder[]
+}
+model InternalOrder{
+  orderId   Int @id @default(autoincrement())
+  sellerId    String
+  buyerId    String
+  product  Chapter @relation(fields: [productId], references: [id])
+  productId Int
+  
+}
+ model externalOrder{
+   orderId  Int @id @default(autoincrement())
+   adminId  String 
+   userId String
+   status String
+   productId Int
+  
+ }
+ model coinsPackage{
+   id Int @id @default(autoincrement())
+   title     String
+   sellprice Int
+   buyprice Int
+   value Int
+ }
+
