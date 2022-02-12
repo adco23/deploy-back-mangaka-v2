@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import axios from "axios";
 import { db } from "./app";
 import User from "./classes/User";
+import { HEROKU_URL } from "./utils/constants";
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const localStrategy = require("passport-local").Strategy;
 
@@ -48,7 +49,7 @@ module.exports = function (passport: any) {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.HEROKU_URL + "api/auth/google/callback",
+        callbackURL: `${HEROKU_URL}api/auth/google/callback`,
       },
       async function (
         accessToken: any,
