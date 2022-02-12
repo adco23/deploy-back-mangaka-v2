@@ -1,5 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
+import { CLIENT_URL } from "../utils/constants";
 
 export const authRouter = Router();
 
@@ -14,7 +15,7 @@ authRouter.get( "/google",
 authRouter.get( "/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   function (req, res) {
-    res.redirect("http://localhost:3000"); //front
+    res.redirect(CLIENT_URL); //front
   }
 );
 
@@ -25,7 +26,7 @@ authRouter.post<{}, {}>("/local/login", (req, res, next) => {
     else {
       req.logIn(user, err => {
         if (err) throw err;
-        return res.redirect("http://localhost:3001/api/mangas/directory")
+        return res.redirect(CLIENT_URL)
       })
     }
   })(req, res, next)
