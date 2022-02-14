@@ -20,10 +20,12 @@ export const usersRouter = Router();
 
 usersRouter.get("/", async (req, res) => {
   const users = await db.user.findMany({
+    /*
     where: { created: { some: {} } },
     include: {
       created: true,
     },
+    */
   });
 
   res.send(users);
