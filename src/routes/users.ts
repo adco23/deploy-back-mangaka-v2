@@ -58,7 +58,7 @@ usersRouter.post<
     avatar = req.file.buffer;
   } else {
     let bufferImage = await axios.get(
-      "https://w7.pngwing.com/pngs/896/495/png-transparent-one-punch-man-one-punch-man-volume-3-computer-icons-saitama-one-punch-man-face-manga-head.png",
+      "https://cdn.pixabay.com/photo/2016/09/28/02/14/user-1699635_960_720.png",
       { responseType: "arraybuffer" }
     );
     avatar = Buffer.from(bufferImage.data, "utf-8");
