@@ -36,10 +36,10 @@ app.use((req:any, res:any, next:any) => {
 });
 
 app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(cors({
-//   origin: "*",
-//   credentials: true
-// }));
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
 
 app.use(morgan("dev"));
 app.use(express.json());

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
-// import { CLIENT_URL } from "../utils/constants";
+import { CLIENT_URL } from "../utils/constants";
 // require('dotenv').config();
 
 export const authRouter = Router();
@@ -16,7 +16,7 @@ authRouter.get( "/google",
 authRouter.get( "/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   function (req, res) {
-    res.redirect(`${process.env.CLIENT_URL}`); //front
+    res.redirect(CLIENT_URL); //front
   }
 );
 
