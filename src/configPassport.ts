@@ -49,7 +49,7 @@ module.exports = function (passport: any) {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${HEROKU_URL}/api/auth/google/callback`,
+        callbackURL: `${HEROKU_URL}api/auth/google/callback`,
       },
       async function (
         accessToken: any,
