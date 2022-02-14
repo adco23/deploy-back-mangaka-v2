@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { db } from "../app";
 import User from "../classes/User";
+import fs from "fs";
 import multer from "multer";
 const upload = multer({
   limits: {
@@ -57,11 +58,7 @@ usersRouter.post<
   if (req.file) {
     avatar = req.file.buffer;
   } else {
-    let bufferImage = await axios.get(
-      "https://cdn.pixabay.com/photo/2016/09/28/02/14/user-1699635_960_720.png",
-      { responseType: "arraybuffer" }
-    );
-    avatar = Buffer.from(bufferImage.data, "utf-8");
+    avatar = fs.readFileSync("./assets/default.png");
   }
 
   const newUser = new User(name, username, avatar, email, hashedPassword);
