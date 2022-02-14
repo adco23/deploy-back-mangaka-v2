@@ -14,6 +14,6 @@ routes.use("/chapters", chaptersRouter);
 routes.use("/auth", authRouter);
 routes.use("/buyChapter", internalOrderRouter);
 routes.use("/Coins", externalOrderRouter);
-routes.get("/", (req: any, res: any) => {
-  res.send("Hello world")
-})
+// routes.get("/", (req: any, res: any) => {
+//   res.send("Hello world")
+// })
