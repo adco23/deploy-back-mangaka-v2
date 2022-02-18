@@ -1,4 +1,5 @@
-//import { Role } from '@prisma/client';
+//@ts-ignore
+import { Role } from '@prisma/client';
 
 export default class User {
   id: string | undefined;
@@ -7,7 +8,7 @@ export default class User {
   password: string | undefined;
   avatar: Buffer;
   active: boolean;
-  //role: Role;
+  role: Role;
   about: string;
   coins: number;
   creatorMode: boolean;
@@ -23,7 +24,7 @@ export default class User {
     avatar: Buffer,
     email: string,
     password?: string,
-    //role?: Role,
+    role?: Role,
     active?:boolean,
     about?: string,
     coins?: number,
@@ -39,7 +40,7 @@ export default class User {
     this.email = email;
     this.password = password || undefined;
     this.avatar = avatar || undefined;
-    //this.role = role || 'USER';
+    this.role = role || 'USER';
     this.active = active || true;
     this.about = about || "This is my Profile!";
     this.coins = coins || 0;
