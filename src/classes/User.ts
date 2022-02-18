@@ -1,9 +1,13 @@
+//import { Role } from '@prisma/client';
+
 export default class User {
   id: string | undefined;
   name: string;
   username: string;
   password: string | undefined;
   avatar: Buffer;
+  active: boolean;
+  //role: Role;
   about: string;
   coins: number;
   creatorMode: boolean;
@@ -19,6 +23,8 @@ export default class User {
     avatar: Buffer,
     email: string,
     password?: string,
+    //role?: Role,
+    active?:boolean,
     about?: string,
     coins?: number,
     creatorMode?: boolean,
@@ -33,6 +39,8 @@ export default class User {
     this.email = email;
     this.password = password || undefined;
     this.avatar = avatar || undefined;
+    //this.role = role || 'USER';
+    this.active = active || true;
     this.about = about || "This is my Profile!";
     this.coins = coins || 0;
     this.creatorMode = creatorMode || false;
@@ -91,7 +99,6 @@ export function removeWishList(user: User, mangaId: number): void {
 export function addCreated(user:User,mangaId:number):void {
     user.created = [...user.created, mangaId];
 }
-
 export function removeCreated(user:User,mangaId:number):void {
     user.created = user.created.filter(manga => manga !== mangaId);
 }

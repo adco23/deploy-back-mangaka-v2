@@ -9,6 +9,8 @@ export default class Chapter {
   mangaId: number;
   price: number;
   usersId: string[];
+  comments: string[];
+  active: boolean;
 
   constructor(
     title: string,
@@ -16,8 +18,10 @@ export default class Chapter {
     coverImage: Buffer,
     price: number,
     mangaId: number,
+    active?:boolean,
     points?: number,
     usersId?: string[],
+    comments?: string[],
     id?: number
   ) {
     this.title = title;
@@ -25,8 +29,10 @@ export default class Chapter {
     this.images = images;
     this.price = price;
     this.points = points || 0;
+    this.active = active || true;
     this.mangaId = mangaId;
     this.usersId = usersId || [];
+    this.comments = usersId || [];
     this.id = id || undefined;
   }
 }

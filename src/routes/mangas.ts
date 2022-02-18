@@ -287,8 +287,8 @@ mangasRouter.get<{}, {}>("/listOfGenres", async (req, res, next) => {
 
   let arrayGenres: string[] = [];
 
-  mangas.forEach((manga) => {
-    manga.genre.forEach((genre) => arrayGenres.push(genre));
+  mangas.forEach((manga:any) => {
+    manga.genre.forEach((genre:any) => arrayGenres.push(genre));
   });
   const deleteDuplicates = new Set(arrayGenres);
 

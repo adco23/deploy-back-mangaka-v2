@@ -81,7 +81,7 @@ export async function paginatedByAuthor(numPaged: number, author: string): Promi
     throw new Error(e.message);
   }
   let mangasByAuthor: any = [];
-  searchResults.forEach((elto) =>
+  searchResults.forEach((elto:any) =>
   elto.created?.forEach((manga: any) =>
     mangasByAuthor.push({
       id: manga.id,
