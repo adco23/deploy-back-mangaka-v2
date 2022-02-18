@@ -59,7 +59,7 @@ require("./configPassport")(passport);
 app.use("/api", routes);
 
 app.get('/', (req:any, res:any) => {
-  res.send('Welcome!');
+  res.send('Hi Mangakas!');
 })
 app.use(ignoreFavicon);
 
