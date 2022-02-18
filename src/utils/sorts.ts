@@ -20,6 +20,4 @@ export function sort(mangas:Manga[], order:string, tag:string):Manga[] {
     
   
     return sortMangas;
-}   
-
-
+}  
