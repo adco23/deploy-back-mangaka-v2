@@ -3,31 +3,29 @@ import bcrypt from "bcrypt";
 import { db } from "../app";
 import User from "../classes/User";
 import fs from "fs";
+//@ts-ignore
+import { Role } from '@prisma/client';
+import { isAuthenticated } from "./auth";
+import { deleteToTheList } from "../utils/lists";
 import multer from "multer";
 const upload = multer({
   limits: {
     fileSize: 100000000,
   },
   fileFilter(req, file, cb) {
-    if (!file.originalname.match(/\.(png|jpg|jpeg)$/)) {
+    if (!file.originalname.match(/\.(png|jpg|jpeg|jfif)$/)) {
       cb(new Error("Please upload an image."));
     }
     cb(null, true);
   },
 });
+
 import axios from "axios";
 import passport from "passport";
 export const usersRouter = Router();
 
 usersRouter.get("/", async (req, res) => {
-  const users = await db.user.findMany({
-    /*
-    where: { created: { some: {} } },
-    include: {
-      created: true,
-    },
-    */
-  });
+  const users = await db.user.findMany({});
 
   res.send(users);
 });
@@ -40,7 +38,7 @@ usersRouter.post<
   const { name, username, password, email } = req.body;
 
   const regPass = new RegExp(
-    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,15}$/
+    /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-._]).{8,15}$/
   );
   const regEmail = new RegExp(
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -142,42 +140,55 @@ usersRouter.post<{}, {}>("/authorsTest", async (req, res) => {
     { responseType: "arraybuffer" }
   );
   let buffer = Buffer.from(image.data, "utf-8");
+  let hashedPassword = await bcrypt.hash("Testuser152022!", 10);
   const userTest2 = new User(
     "Aster Noriko",
     "AsterN",
     buffer,
-    "asternoriko@gmail.com"
+    "asternoriko@gmail.com",
+    hashedPassword
   );
   const userTest3 = new User(
     "Daichi Matsuse",
     "DaichiM",
     buffer,
-    "daichimatsuse@gmail.com"
+    "daichimatsuse@gmail.com",
+    hashedPassword
   );
   const userTest4 = new User(
     "Fumino Hayashi",
     "FuminoH",
     buffer,
-    "fuminohayashi@gmail.com"
+    "fuminohayashi@gmail.com",
+    hashedPassword
   );
-  const userTest5 = new User("Gato Aso", "GatoA", buffer, "gatoaso@gmail.com");
+  const userTest5 = new User(
+    "Gato Aso",
+    "GatoA",
+    buffer,
+    "gatoaso@gmail.com",
+    hashedPassword
+  );
   const userTest6 = new User(
     "Katsu Aki",
     "KatsuA",
     buffer,
-    "katsuaki@gmail.com"
+    "katsuaki@gmail.com",
+    hashedPassword
   );
   const userTest7 = new User(
     "Kyo Shirodaira",
     "KyoS",
     buffer,
-    "kyoshirodaira@gmail.com"
+    "kyoshirodaira@gmail.com",
+    hashedPassword
   );
   const userTest8 = new User(
     "Mitsuba Takanashi",
     "MitsubaT",
     buffer,
-    "mitsubaTakanashi@gmail.com"
+    "mitsubaTakanashi@gmail.com",
+    hashedPassword
   );
 
   const newUsers = [
@@ -228,21 +239,55 @@ usersRouter.post<{ idManga: string; username: string }, {}>(
     res.json(getUser);
   }
 );
-// Perfil de usuario
-usersRouter.get<{ username: string }, {}>(
-  "/user/:username",
-  async (req, res, next) => {
-    const { username } = req.params;
-
-    const User: any = await db.user.findUnique({
-      where: { username: username },
+// Detalles del autor
+usersRouter.get<{ id: string }, {}>("/user/:id", async (req, res, next) => {
+  const { id } = req.params;
+  try {
+    const user: any = await db.user.findUnique({
+      where: { id: id },
       include: {
-        created: true,
+        created: {
+          select: {
+            id: true,
+            title: true,
+            image: true,
+            state: true,
+            rating: true,
+          },
+        },
       },
     });
-    return res.send(User);
+
+    if (!user) return res.status(404).json({ msg: "Invalid author ID" });
+    if (!user.creatorMode)
+      return res.status(404).json({ msg: "The user is not an author" });
+
+    let totalPoints: number = 0;
+
+    user.created.map((manga: any) => {
+      totalPoints += manga.rating;
+    });
+
+    let authorRating: number = Number(
+      (totalPoints / user.created.length).toFixed(2)
+    );
+
+    return res.send({
+      data: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        avatar: user.avatar,
+        about: user.about,
+        created: user.created,
+        authorRating,
+      },
+    });
+  } catch (err: any) {
+    console.log("Author detail: ", err);
+    res.status(400).send({ error: err.message });
   }
-);
+});
 
 usersRouter.get("/currentUser", (req, res, next) => {
   // console.log(req)
@@ -251,4 +296,124 @@ usersRouter.get("/currentUser", (req, res, next) => {
     return res.json({msg: 'No hay un usuario logueado'})
   }
   res.json(req.user);
+});
+
+
+usersRouter.post<
+  {},
+  {},
+  {
+    name: string;
+    username: string;
+    password: string;
+    email: string;
+    role: Role;
+  }
+>("/superAdmin", async (req, res) => {
+  // const { name, username, password, email,role} = req.body;
+  let image = await axios.get(
+    "https://http2.mlstatic.com/D_NQ_NP_781075-MLA48271965969_112021-O.webp",
+    { responseType: "arraybuffer" }
+  );
+  let buffer = Buffer.from(image.data, "utf-8");
+  let hashedPassword = await bcrypt.hash("Manga1522022!", 10);
+  const newUser = new User(
+    "Super Mangaka",
+    "SuperMGK",
+    buffer,
+    "supermangaka2022@gmail.com",
+    hashedPassword,
+    "SUPERADMIN"
+  );
+
+  try {
+    let superAdmin = await db.user.findUnique({
+      where: { username: newUser.username },
+    });
+
+    if (!superAdmin) {
+      superAdmin = await db.user.create({
+        data: newUser,
+      });
+    }
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+usersRouter.put<{ admin: boolean; username: string }, {}>(
+  "/user/setAdmin/:username",
+  async (req, res, next) => {
+    const { username } = req.params;
+
+    try {
+      const user = await db.user.findUnique({
+        where: { username: username },
+      });
+      if (!user) return res.send({ message: "User not found" });
+
+      const upsertUser = await db.user.update({
+        where: {
+          username: username,
+        },
+        data: {
+          role: user.role === "USER" ? "ADMIN" : "USER",
+        },
+      });
+      return res.send(upsertUser);
+    } catch (error) {
+      return res.sendStatus(404).json({ message: error });
+    }
+  }
+);
+
+usersRouter.put<{ admin: boolean; username: string }, {}>(
+  "/user/setActive/:username",
+  async (req, res, next) => {
+    const { username } = req.params;
+
+    try {
+      const user = await db.user.findUnique({
+        where: { username: username },
+        include: { created: true },
+      });
+      if (!user) return res.send({ message: "User not found" });
+
+      user.created.forEach((manga:any) => {
+        manga.active = true;
+      });
+      user.created.forEach((manga:any) => console.log(manga.active));
+
+      const upsertUser = await db.user.update({
+        where: {
+          username: username,
+        },
+        data: {
+          active: user?.active === true ? false : true,
+        },
+      });
+      return res.send(upsertUser);
+    } catch (error) {
+      return res.sendStatus(404).json({ message: error });
+    }
+});
+
+
+usersRouter.put<{id: string, list: string}, {}>("/user/lists/:id", async (req, res) => {
+  const { id } = req.params;
+  const { list } = req.query;
+  const { mangaId } = req.body;
+  
+  if (list !== "library" && list !== "favorites" && list !== "wishList" ) return res.status(400).send({msg: "Invalid list name"});
+      
+  try {
+    let mangasList = await deleteToTheList(id, list , mangaId);
+    
+    return (mangasList.length === 0) ?
+    res.send({msg: "Empty list"}) :
+    res.send({msg: "Delete manga to the list"})
+  } catch (error: any) {
+    console.log("Delete manga from list: ", error)
+    return res.status(400).send({error: error.message})
+  }
 });

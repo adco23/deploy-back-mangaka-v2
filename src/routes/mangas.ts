@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "../app";
 import Manga from "../classes/Manga";
 import User from "../classes/User";
+import bcrypt from "bcrypt";
 export const mangasRouter = Router();
 import axios from "axios";
 import { sort } from "../utils/sorts";
@@ -53,6 +54,7 @@ mangasRouter.get<{}, {}>("/popularMangas", async (req, res) => {
   try {
     const popularMangas = await db.manga.findMany({
       where: {
+        active:true,
         rating: {
           gte: 8,
         },
@@ -69,17 +71,19 @@ mangasRouter.get<{}, {}>("/popularMangas", async (req, res) => {
   }
 });
 
-// Obtener el detalle de un manga
-mangasRouter.get<{ idManga: string }, {}>(
-  "/manga/:idManga",
-  async (req, res, next) => {
-    const { idManga } = req.params;
+// Obtener el detalle de un manga   ACA PODRIA AGREGAR WHERE ACTIVE TRUE
+mangasRouter.get<{ idManga: string }, {}>("/manga/:idManga", async (req, res) => {
+  const { idManga } = req.params;
 
-    console.log(req.params);
-    const Manga: any = await db.manga.findUnique({
+  try {
+    const manga: any = await db.manga.findUnique({
       where: { id: Number(idManga) },
       include: {
-        chapters: true,
+        chapters: {
+          select: {
+            id: true, title: true, points: true, coverImage: true, usersId: true, price: true, active: true
+          }
+        },
         author: {
           select: {
             name: true,
@@ -87,9 +91,37 @@ mangasRouter.get<{ idManga: string }, {}>(
         },
       },
     });
-    return res.json({ data: Manga });
-  }
-);
+
+    if (!manga) return res.status(404).json({msg: "Invalid manga ID"});
+
+    let nUsers: number = 0;
+    let totalPoints: number = 0;
+
+    manga.chapters.map((chapter: any)=> {
+      nUsers += chapter.usersId.length;
+      totalPoints += chapter.points;
+    });
+
+    if (manga.rating !== (totalPoints/nUsers)) {
+
+      let mangaUpdate = await db.manga.update({
+        where: {
+          id: Number(idManga)
+        },
+        data: {
+          rating: (totalPoints / nUsers) ? (totalPoints / nUsers) : manga.rating
+        }
+      })
+
+      return res.send({data: mangaUpdate})
+    }
+
+    return res.json({ data: manga });
+  } catch (error: any) {
+    console.log("Detalle de manga: ", error)
+    res.status(400).send({error: error.message})
+  }    
+});
 
 // Ruta testing para obtener la imagen del manga
 mangasRouter.get("/testImage/:id", async function (req, res) {
@@ -114,15 +146,10 @@ mangasRouter.get("/testImage/:id", async function (req, res) {
 });
 
 // Para la creacion de mangas hardcodeamos el usuario para el authorID.
-mangasRouter.post<{}, {}>(
-  "/",
+mangasRouter.post<{}, {}>("/",
   upload.single("images"),
   async (req, res, next) => {
     const { title, synopsis, authorId, genres } = req.body;
-    //Las lineas de abajo son para hardcodear el authorId
-    const Author = await db.user.findUnique({
-      where: { username: "SuperAdmin" },
-    });
     let image;
     if (req.file) {
       image = req.file.buffer;
@@ -131,9 +158,6 @@ mangasRouter.post<{}, {}>(
     }
 
     let createdManga = new Manga(title, synopsis, image, genres, authorId);
-    if (Author) {
-      createdManga = new Manga(title, synopsis, image, genres, Author.id);
-    }
 
     try {
       const newManga = await db.manga.create({
@@ -147,8 +171,7 @@ mangasRouter.post<{}, {}>(
   }
 );
 
-mangasRouter.put(
-  "/manga/updateCover/:mangaId",
+mangasRouter.put("/manga/updateCover/:mangaId",
   upload.single("image"),
   async (req, res, next) => {
     let image: Buffer;
@@ -172,6 +195,7 @@ mangasRouter.put(
   }
 );
 
+
 // Para borrar todos los  mangas de la DB
 mangasRouter.delete<{}, {}>("/", async (req, res, next) => {
   await db.manga.deleteMany({});
@@ -183,6 +207,7 @@ mangasRouter.get<{}, {}>("/Search", async (req, res, next) => {
   const { title } = req.query;
   const result: any = await db.manga.findMany({
     where: {
+      active:true,
       title: {
         contains: title as string,
         mode: "insensitive",
@@ -209,11 +234,13 @@ mangasRouter.get<{}, {}>("/allMangas", async (req, res, next) => {
       { responseType: "arraybuffer" }
     );
     let buffer = Buffer.from(image.data, "utf-8");
+    let hashedPassword = await bcrypt.hash("Manga1522022!", 10);
     const adminTest = new User(
       "Admin",
       "SuperAdmin",
       buffer,
-      "soyeladmin@gmail.com"
+      "soyeladmin@gmail.com",
+      hashedPassword
     );
 
     user = await db.user.create({
@@ -270,6 +297,7 @@ mangasRouter.get<{}, {}>("/allMangas", async (req, res, next) => {
 mangasRouter.get<{}, {}>("/recentMangas", async (req, res, next) => {
   try {
     const recentMangas = await db.manga.findMany({
+      where: { active:true },
       orderBy: {
         uptadedAt: "desc",
       },
@@ -313,4 +341,30 @@ mangasRouter.get<{}, {}>("/byAuthor", async (req, res) => {
     console.log("Error byAuthor: ", error);
     return res.status(400).send({ message: error.message });
   }
+});
+
+mangasRouter.put<{ idManga:string }, {}>("/manga/setActive/:idManga", async (req, res, next) => {
+  const { idManga } = req.params;
+
+  try {
+
+    const manga = await db.manga.findUnique({
+      where: { id: Number(idManga) }
+    })
+    if (!manga) return res.send({ message: "Manga not found" })
+
+
+    const upsertManga = await db.manga.update({
+      where: {
+        id: Number(idManga),
+      },
+      data: {
+        active: manga?.active === true ? false : true,
+      }
+    });
+    return res.send(upsertManga);
+  } catch (error) {
+    return res.sendStatus(404).json({ message: error });
+  }
+
 });
