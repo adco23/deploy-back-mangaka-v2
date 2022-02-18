@@ -354,7 +354,7 @@ mangasRouter.put<{ idManga:string }, {}>("/manga/setActive/:idManga", async (req
     if (!manga) return res.send({ message: "Manga not found" })
 
 
-    const upsertManga = await db.manga.update({
+    const updateManga = await db.manga.update({
       where: {
         id: Number(idManga),
       },
@@ -362,7 +362,7 @@ mangasRouter.put<{ idManga:string }, {}>("/manga/setActive/:idManga", async (req
         active: manga?.active === true ? false : true,
       }
     });
-    return res.send(upsertManga);
+    return res.send(`${updateManga.title} active is ${updateManga.active}`);
   } catch (error) {
     return res.sendStatus(404).json({ message: error });
   }

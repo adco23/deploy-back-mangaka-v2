@@ -335,7 +335,9 @@ usersRouter.post<
       superAdmin = await db.user.create({
         data: newUser,
       });
+      return res.send("Super Mangaka creado")
     }
+    return res.send("Super Mangaka ya existe")
   } catch (err) {
     console.log(err);
   }
@@ -360,7 +362,7 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           role: user.role === "USER" ? "ADMIN" : "USER",
         },
       });
-      return res.send(upsertUser);
+      return res.send(`Rol of ${username} change`);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
@@ -392,7 +394,7 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           active: user?.active === true ? false : true,
         },
       });
-      return res.send(upsertUser);
+      return res.send(`${username} active is ${upsertUser.active}`);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
