@@ -4,7 +4,7 @@ import CoinsPackage from "../classes/CoinsPackage";
 import { HEROKU_URL, CLIENT_URL } from "../utils/constants";
 import externalOrder from "../classes/ExternalOrder";
 export const externalOrderRouter = Router();
-/*
+
 const mercadopago = require("mercadopago");
 
 mercadopago.configure({
@@ -160,4 +160,3 @@ externalOrderRouter.get<{}, {}>("/pack", async (req, res) => {
   let packfiltered = pack.filter((e:any) => e.buyprice > 9);
   res.send(packfiltered);
 });
-*/
