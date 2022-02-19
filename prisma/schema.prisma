@@ -41,6 +41,7 @@ model User {
   googleId    Boolean
   active      Boolean
   role        Role    @default(USER)
+  chapters    Int[]
 }
 
 model Manga {
