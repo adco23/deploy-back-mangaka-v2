@@ -50,7 +50,7 @@ externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
 
 externalOrderRouter.get("/pagos/:product", async (req, res) => {
   const payment_status = req.query.status;
-  console.log('ENTRE A PAGOS ')
+  console.log('ENTRE A PAGOSS ')
   let { product } = req.params;
   let user2 = req.user;
   let adminId = await db.user.findUnique({ where: { username: "SuperAdmin" } });
