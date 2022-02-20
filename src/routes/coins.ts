@@ -26,7 +26,7 @@ externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
     installments: 1,
 
     back_urls: {
-      success: `${HEROKU_URL}api/coins/buy/pagos`,
+      success: `${HEROKU_URL}api/coins/pagos/${product.idaux}`,
       failure: `${HEROKU_URL}api/coins/buy`,
       pending: `${HEROKU_URL}api/coins/buy`,
     }
