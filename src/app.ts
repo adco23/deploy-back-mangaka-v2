@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import bcrypt from "bcrypt"
 import session from "express-session";
 import bodyParser from "body-parser";
+import { CLIENT_URL } from "./utils/constants";
 
 export const db = new PrismaClient();
 
@@ -25,7 +26,7 @@ function ignoreFavicon(req:any, res:any, next:any) {
 }
 
 app.use((req:any, res:any, next:any) => {
-  res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
+  res.header("Access-Control-Allow-Origin", CLIENT_URL); // update to match the domain you will make the request from
   res.header("Access-Control-Allow-Credentials", "true");
   res.header(
     "Access-Control-Allow-Headers",
