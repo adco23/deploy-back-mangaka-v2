@@ -50,10 +50,10 @@ externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
 
 externalOrderRouter.get("/pagos/:product", async (req, res) => {
   const payment_status = req.query.status;
-  console.log('ENTRE A PAGOSS ')
+  console.log('ENTRE A PAGOS ')
   let { product } = req.params;
   let user2 = req.user;
-  let adminId = await db.user.findUnique({ where: { username: "SuperAdmin" } });
+  //let adminId = await db.user.findUnique({ where: { username: "SuperMGK" } });
   console.log('ENTRE A PAGOS ',product)
   let packageCoins: any = await db.coinsPackage.findUnique({
     //@ts-ignore
@@ -61,7 +61,8 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
   });
   console.log(packageCoins.value);
 
-  console.log(`USER 2 ${user2} Y ADMIN ${adminId}`)
+  if (user2) {
+    console.log(`USER 2 ${user2}`)
     if (payment_status !== "approved") {
       res.send("There´s a problem with the transaction");
     } else {
@@ -69,7 +70,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
         //@ts-ignore
         console.log('ENTRE A CREAR LA EXTERNAL ORDER ')
         const Eorder = new externalOrder(
-          adminId.id,
+          "3fb46c04-87c3-4e95-8e47-86dec04f775c",
           //@ts-ignore
           user2.id,
           "approved",
@@ -95,8 +96,10 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
         res.redirect(`${CLIENT_URL}error`);
       }
     }
+  } else {
+    res.send(`USER 2 NO EXISTE`)
   }
-);
+});
 
 externalOrderRouter.post<{}, {}>("/sell", async (req, res) => {
   let { adminId, userId, status, value } = req.body;
