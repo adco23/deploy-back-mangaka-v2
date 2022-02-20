@@ -67,6 +67,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
     } else {
       try {
         //@ts-ignore
+        console.log('ENTRE A CREAR LA EXTERNAL ORDER ')
         const Eorder = new externalOrder(
           adminId.id,
           //@ts-ignore
@@ -87,7 +88,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
           },
         });
         //@ts-ignore
-
+        console.log('CREA NEWORDER Y VA A REDIRECT',newEOrder)
         res.redirect(`${CLIENT_URL}`);
       } catch (error) {
         console.log(error);
