@@ -61,7 +61,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
   });
   console.log(packageCoins.value);
 
-  if (user2 && adminId) {
+  console.log(`USER 2 ${user2} Y ADMIN ${adminId}`)
     if (payment_status !== "approved") {
       res.send("There´s a problem with the transaction");
     } else {
@@ -96,7 +96,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
       }
     }
   }
-});
+);
 
 externalOrderRouter.post<{}, {}>("/sell", async (req, res) => {
   let { adminId, userId, status, value } = req.body;
