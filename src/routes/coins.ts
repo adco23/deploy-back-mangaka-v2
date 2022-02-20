@@ -13,6 +13,7 @@ mercadopago.configure({
 });
 
 externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
+  console.log('ENTRE A BUY')
   let product = req.body;
   console.log(req.body);
   let preference = {
@@ -49,10 +50,11 @@ externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
 
 externalOrderRouter.get("/pagos/:product", async (req, res) => {
   const payment_status = req.query.status;
+  console.log('ENTRE A PAGOS ')
   let { product } = req.params;
   let user2 = req.user;
   let adminId = await db.user.findUnique({ where: { username: "SuperAdmin" } });
-  console.log(product)
+  console.log('ENTRE A PAGOS ',product)
   let packageCoins: any = await db.coinsPackage.findUnique({
     //@ts-ignore
     where: { id: Number(product) },
