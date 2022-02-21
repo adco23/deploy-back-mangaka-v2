@@ -26,7 +26,7 @@ export const profileRouter = Router();
 profileRouter.get("/", isAuthenticated, async (req, res, next) => {
   //@ts-ignore
   const { name, username, avatar, email, role, about, coins, creatorMode, library, wishList, favorites, created, active} = req.user;
-  console.log(req.user);
+  //console.log(req.user);
   if (active) {
     let profile = {
       name: name,

@@ -289,13 +289,18 @@ usersRouter.get<{ id: string }, {}>("/user/:id", async (req, res, next) => {
   }
 });
 
-usersRouter.get("/currentUser", (req, res, next) => {
-  // console.log(req)
-  // console.log(req.user);
-  if(!req.user) {
-    return res.json({msg: 'No hay un usuario logueado'})
+usersRouter.get("/currentUser", isAuthenticated, async (req, res, next) => {
+  //@ts-ignore
+  const { id } = req.user;
+  try {
+    var user: any = await db.user.findUnique({
+      where: { id: id },
+    });
+  } catch (err: any) {
+    console.log(err);
+    res.status(400).send({ error: err.message });
   }
-  res.json(req.user);
+  res.send(user)
 });
 
 
@@ -345,9 +350,16 @@ usersRouter.post<
 
 usersRouter.put<{ admin: boolean; username: string }, {}>(
   "/user/setAdmin/:username",
+  isAuthenticated,
   async (req, res, next) => {
     const { username } = req.params;
-
+    //@ts-ignore
+    const admin = req.user
+    //@ts-ignore
+    if (!(admin.role === "SUPERADMIN")) {
+      return res.status(403).send({ message: "You don't have permission to do this, Are you trying to hack us?" });
+    }
+    
     try {
       const user = await db.user.findUnique({
         where: { username: username },
@@ -362,7 +374,7 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           role: user.role === "USER" ? "ADMIN" : "USER",
         },
       });
-      return res.send(`Rol of ${username} change`);
+      return res.send(upsertUser);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
@@ -371,8 +383,15 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
 
 usersRouter.put<{ admin: boolean; username: string }, {}>(
   "/user/setActive/:username",
+  isAuthenticated,
   async (req, res, next) => {
     const { username } = req.params;
+    //@ts-ignore
+    const admin = req.user
+    //@ts-ignore
+    if (!(admin.role === "ADMIN" || admin.role === "SUPERADMIN")) {
+      return res.status(403).send({ message: "You don't have permission to do this, Are you trying to hack us?" });
+    }
 
     try {
       const user = await db.user.findUnique({
@@ -394,28 +413,75 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           active: user?.active === true ? false : true,
         },
       });
-      return res.send(`${username} active is ${upsertUser.active}`);
+      return res.send(upsertUser);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
-});
+  });
 
 
-usersRouter.put<{id: string, list: string}, {}>("/user/lists/:id", async (req, res) => {
-  const { id } = req.params;
-  const { list } = req.query;
-  const { mangaId } = req.body;
+
+
+  usersRouter.put<{ id: string, list: string }, {}>("/user/lists", isAuthenticated, async (req, res) => {
+    // const { id } = req.params;
+    //@ts-ignore
+    const id = req.user.id
+    const { list } = req.query;
+    const mangaId = Number(req.body.mangaId);
   
-  if (list !== "library" && list !== "favorites" && list !== "wishList" ) return res.status(400).send({msg: "Invalid list name"});
-      
-  try {
-    let mangasList = await deleteToTheList(id, list , mangaId);
-    
-    return (mangasList.length === 0) ?
-    res.send({msg: "Empty list"}) :
-    res.send({msg: "Delete manga to the list"})
-  } catch (error: any) {
-    console.log("Delete manga from list: ", error)
-    return res.status(400).send({error: error.message})
-  }
-});
+    if (list !== "library" && list !== "favorites" && list !== "wishList") return res.status(400).send({ msg: "Invalid list name" });
+    try {
+      //@ts-ignore
+      if (req.user[list].includes(mangaId)) {
+        //@ts-ignore
+        let mangasList = await deleteToTheList(id, list, mangaId, req.user[list]);
+        return (mangasList.length === 0) ?
+          res.send({ msg: "Empty list" }) : res.send({ msg: "Delete manga to the list" })
+      } else {
+        //@ts-ignore
+        let mangasList = await addToTheList(id, list, mangaId, req.user[list]);
+        return (mangasList.length === 0) ?
+          res.send({ msg: "Empty list" }) : res.send({ msg: "Add manga to the list" })
+      }
+    } catch (error: any) {
+      console.log("Delete manga from list: ", error)
+      return res.status(400).send({ error: error.message })
+    }
+  });
+
+  usersRouter.get("/popularAuthors", async (req, res) => {
+
+    try {
+      let authorsDB = await db.user.findMany({
+        where: {
+          creatorMode: true,
+        },
+        select: {
+          id: true, name: true, avatar: true, created: {
+            select: {
+              rating: true,
+            }
+          }
+        },
+      });
+  
+      const authorsRating: any = authorsDB.map((author:any) => {
+        return {
+          id: author.id,
+          avatar: author.avatar,
+          name: author.name,
+          rating: Number(((author.created.map((elto:any) => elto.rating).reduce((acum:any, actu:any) => acum += actu)) / author.created.length).toFixed(2))
+        }
+      });
+  
+      authorsRating.sort((a: any, b: any) => {
+        if (a.rating > b.rating) return -1;
+        if (a.rating < b.rating) return 1;
+      })
+  
+      res.send({ data: authorsRating.slice(0, 11) })
+    } catch (error: any) {
+      console.log("Popular authors: ", error)
+      return res.status(400).send({ error: error.message })
+    }
+  });
