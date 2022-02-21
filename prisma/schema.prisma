@@ -97,7 +97,7 @@ model externalOrder {
   price     Int
   productId Int
   createdAt DateTime @default(now())
-  value     Int
+  value     Int      @default(0)
 }
 
 model coinsPackage {
