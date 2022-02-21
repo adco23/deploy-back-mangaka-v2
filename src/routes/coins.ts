@@ -13,9 +13,9 @@ mercadopago.configure({
 });
 
 externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
-  console.log('ENTRE A BUY')
+  //console.log('ENTRE A BUY')
   let product = req.body;
-  console.log(req.body);
+  //console.log(req.body);
   let preference = {
     items: [
       {
@@ -50,31 +50,31 @@ externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
 
 externalOrderRouter.get("/pagos/:product", async (req, res) => {
   const payment_status = req.query.status;
-  console.log('ENTRE A PAGOS ')
+  //console.log('ENTRE A PAGOS ')
   let { product } = req.params;
   let user2 = req.user;
   //let adminId = await db.user.findUnique({ where: { username: "SuperMGK" } });
-  console.log('ENTRE A PAGOS ',product)
+  //console.log('ENTRE A PAGOS ',product)
   let packageCoins: any = await db.coinsPackage.findUnique({
     //@ts-ignore
     where: { id: Number(product) },
   });
-  console.log(packageCoins.value);
+  //console.log(packageCoins.value);
 
   if (user2) {
-    console.log(`USER 2 ${user2}`)
+    //console.log(`USER 2 ${user2}`)
     if (payment_status !== "approved") {
       res.send("There´s a problem with the transaction");
     } else {
       try {
         //@ts-ignore
-        console.log('ENTRE A CREAR LA EXTERNAL ORDER ')
         const Eorder = new externalOrder(
           "3fb46c04-87c3-4e95-8e47-86dec04f775c",
           //@ts-ignore
           user2.id,
           "approved",
           packageCoins.buyprice,
+          packageCoins.value,
           payment_status,
           packageCoins.id
         );
@@ -88,11 +88,11 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
             coins: user2.coins + packageCoins.value,
           },
         });
+        //console.log('CREA NEWORDER Y VA A REDIRECT',newEOrder)
         //@ts-ignore
-        console.log('CREA NEWORDER Y VA A REDIRECT',newEOrder)
         res.redirect(`${CLIENT_URL}`);
       } catch (error) {
-        console.log(error);
+        //console.log(error);
         res.redirect(`${CLIENT_URL}error`);
       }
     }
@@ -102,33 +102,46 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
 });
 
 externalOrderRouter.post<{}, {}>("/sell", async (req, res) => {
-  let { adminId, userId, status, value } = req.body;
-  let seller = await db.user.findUnique({ where: { id: userId } });
-  let base = await db.coinsPackage.findUnique({ where: { id: 6 } });
-  console.log(base);
-  if (seller && base) {
-    if (seller.coins - value < 0) {
-      res.send("There´s a problem with the transaction");
-    } else {
-      let price = base?.sellprice * value;
-      let pack = new CoinsPackage(value, base.title, price, 0);
-      let newcP = await db.coinsPackage.create({ data: pack });
-      console.log(pack);
-      const Eorder = new externalOrder(
-        adminId,
-        userId,
-        "Sell Order",
-        price,
-        "approved",
-        newcP.id
-      );
-      //@ts-ignore
-      const newEOrder = await db.externalOrder.create({ data: Eorder });
-      const updateSeller = await db.user.update({
-        where: { username: seller.username },
-        data: { coins: seller.coins - value },
-      });
-      res.send("Coins Exchanged");
+  let { name, cbu, value } = req.body;
+  let user2 = req.user;
+  let nValue = Number(value);
+  if (user2) {
+    //@ts-ignore
+    let adminId = await db.user.findUnique({
+      where: { username: "SuperAdmin" },
+    });
+    //@ts-ignore
+    let seller = await db.user.findUnique({ where: { id: user2.id } });
+    let base = await db.coinsPackage.findUnique({ where: { id: 6 } });
+    console.log(base);
+    if (seller && base && adminId) {
+      if (seller.coins - nValue < 0) {
+        res.send("Estan intentado extraer mas monedas de las que tienes");
+      } else {
+        let price = base?.sellprice * nValue;
+        let pack = new CoinsPackage(nValue, base.title, price, 0);
+        let newcP = await db.coinsPackage.create({ data: pack });
+        //console.log(pack);
+        //@ts-ignore
+        const Eorder = new extractionOrder(
+          adminId.id,
+          seller.id,
+          name,
+          cbu,
+          "Orden de extraccion",
+          nValue,
+          price,
+          "approved",
+          newcP.id
+        );
+        //@ts-ignore
+        const newEOrder = await db.extractionOrder.create({ data: Eorder });
+        const updateSeller = await db.user.update({
+          where: { username: seller.username },
+          data: { coins: seller.coins - nValue },
+        });
+        res.send("Peticion de extraccion recibida");
+      }
     }
   }
 });
@@ -165,4 +178,15 @@ externalOrderRouter.get<{}, {}>("/pack", async (req, res) => {
   let pack = await db.coinsPackage.findMany();
   let packfiltered = pack.filter((e:any) => e.buyprice > 9);
   res.send(packfiltered);
+});
+
+externalOrderRouter.get<{}, {}>("/getBuyOrders", async (req, res) => {
+  let user2 = req.user; //@ts-ignore
+  let info = await db.externalOrder.findMany({ where: { userId: user2.id } });
+  res.send(info);
+});
+externalOrderRouter.get<{}, {}>("/getSellOrders", async (req, res) => {
+  let user2 = req.user; //@ts-ignore
+  let info = await db.externalOrder.findMany({ where: { userId: user2.id } });
+  res.send(info);
 });
