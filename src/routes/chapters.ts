@@ -232,7 +232,7 @@ chaptersRouter.put<{ idChapter: string }, {}>("/chapter/vote/:idChapter", isAuth
   //@ts-ignore
   const idUser = user.id;
 
-  if (points >= 1 && points <= 5) return res.status(400).send({ msg: "Points most be between 1 and 5" })
+  if (!(points >= 1 && points <= 5)) return res.status(400).send({ msg: "Points most be between 1 and 5" })
 
   try {
 
