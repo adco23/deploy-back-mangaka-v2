@@ -16,6 +16,7 @@ externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
   //console.log('ENTRE A BUY')
   let product = req.body;
   console.log('USUARIO EN /BUY',req.user);
+  console.log('PRODUCTO IDAUXXXXXXXXXX',product.idaux);
   let preference = {
     items: [
       {
