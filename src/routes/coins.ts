@@ -53,7 +53,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
   console.log('ENTRE A PAGOS ')
   let { product } = req.params;
   let user2 = req.user;
-  //let adminId = await db.user.findUnique({ where: { username: "SuperMGK" } });
+  let adminId = await db.user.findUnique({ where: { username: "SuperMGK" } });
   //console.log('ENTRE A PAGOS ',product)
   let packageCoins: any = await db.coinsPackage.findUnique({
     //@ts-ignore
@@ -69,7 +69,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
       try {
         //@ts-ignore
         const Eorder = new externalOrder(
-          "3fb46c04-87c3-4e95-8e47-86dec04f775c",
+          adminId.id,
           //@ts-ignore
           user2.id,
           "approved",
