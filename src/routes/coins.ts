@@ -15,7 +15,7 @@ mercadopago.configure({
 externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
   //console.log('ENTRE A BUY')
   let product = req.body;
-  //console.log(req.body);
+  console.log('USUARIO EN /BUY',req.user);
   let preference = {
     items: [
       {
@@ -50,7 +50,7 @@ externalOrderRouter.post<{}, {}>("/buy", (req, res) => {
 
 externalOrderRouter.get("/pagos/:product", async (req, res) => {
   const payment_status = req.query.status;
-  //console.log('ENTRE A PAGOS ')
+  console.log('ENTRE A PAGOS ')
   let { product } = req.params;
   let user2 = req.user;
   //let adminId = await db.user.findUnique({ where: { username: "SuperMGK" } });
@@ -59,10 +59,10 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
     //@ts-ignore
     where: { id: Number(product) },
   });
-  //console.log(packageCoins.value);
-
+  console.log('VALUE PACKAGE COINS',packageCoins.value);
+  console.log(`USER 2 PRE IF${user2}`)
   if (user2) {
-    //console.log(`USER 2 ${user2}`)
+    console.log(`USER 2 ${user2}`)
     if (payment_status !== "approved") {
       res.send("There´s a problem with the transaction");
     } else {
