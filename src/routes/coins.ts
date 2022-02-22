@@ -61,7 +61,7 @@ externalOrderRouter.get("/pagos/:product", async (req, res) => {
   });
   console.log('VALUE PACKAGE COINS',packageCoins.value);
   console.log(`USER 2 PRE IF${user2}`)
-  if (user2) {
+  if (user2 && adminId) {
     console.log(`USER 2 ${user2}`)
     if (payment_status !== "approved") {
       res.send("There´s a problem with the transaction");
