@@ -27,6 +27,9 @@ chaptersRouter.post<{}, {}>(
   ]),
   async (req, res, next) => {
     const { title, mangaId, price } = req.body;
+    console.log('MULTER');
+    //@ts-ignore
+    console.log(req.files.chapters)
     //@ts-ignore
     // const Authorship = req.user.created.find((c) => c.id === Number(mangaId));
     // if (!Authorship) {
