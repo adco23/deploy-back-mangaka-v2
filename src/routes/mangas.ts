@@ -373,7 +373,7 @@ mangasRouter.put<{ idManga:string }, {}>("/manga/setActive/:idManga", isAuthenti
         active: manga?.active === true ? false : true,
       }
     });
-    return res.send(upsertManga);
+    return res.send(`${upsertManga.title} active is ${upsertManga.active}`);
   } catch (error) {
     return res.sendStatus(404).json({ message: error });
   }

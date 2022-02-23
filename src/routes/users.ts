@@ -374,7 +374,7 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           role: user.role === "USER" ? "ADMIN" : "USER",
         },
       });
-      return res.send(upsertUser);
+      return res.send(`Rol of ${username} change`);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
@@ -399,12 +399,12 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
         include: { created: true },
       });
       if (!user) return res.send({ message: "User not found" });
-
+      /*
       user.created.forEach((manga:any) => {
         manga.active = true;
       });
       user.created.forEach((manga:any) => console.log(manga.active));
-
+      */
       const upsertUser = await db.user.update({
         where: {
           username: username,
@@ -413,7 +413,7 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           active: user?.active === true ? false : true,
         },
       });
-      return res.send(upsertUser);
+      return res.send(`${username} active is ${upsertUser.active}`);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
