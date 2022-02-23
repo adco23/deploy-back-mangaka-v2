@@ -116,12 +116,24 @@ internalOrderRouter.post<{}, {}>("/favoritesManga", async (req, res, next) => {
 });
 
 internalOrderRouter.get<{}, {}>("/getBuyerOrder", async (req, res) => {
-  let user2 = req.user; //@ts-ignore
-  let info = await db.internalOrder.findMany({ where: { buyerId: user2.id } });
-  res.send(info);
+  try {
+    if(!req.user) return res.send('No hay usuario logeado');
+    let user2 = req.user; //@ts-ignore
+    let info = await db.internalOrder.findMany({ where: { buyerId: user2.id } });
+    res.send(info);
+  } catch (err) {
+    return res.sendStatus(404).json({ message: err });
+  }
+
 });
 internalOrderRouter.get<{}, {}>("/getSellerOrder", async (req, res) => {
-  let user2 = req.user; //@ts-ignore
-  let info = await db.internalOrder.findMany({ where: { sellerId: user2.id } });
-  res.send(info);
+  try {
+    if(!req.user) return res.send('No hay usuario logeado');
+    let user2 = req.user; //@ts-ignore
+    let info = await db.internalOrder.findMany({ where: { sellerId: user2.id } });
+    res.send(info);
+  } catch(err) {
+    return res.sendStatus(404).json({ message: err });
+  }
+  
 });

@@ -182,14 +182,26 @@ externalOrderRouter.get<{}, {}>("/pack", async (req, res) => {
 });
 
 externalOrderRouter.get<{}, {}>("/getBuyOrders", async (req, res) => {
-  let user2 = req.user; //@ts-ignore
-  let info = await db.externalOrder.findMany({ where: { userId: user2.id } });
-  res.send(info);
+  try {
+    if(!req.user) return res.send('No hay usuario logeado');
+    let user2 = req.user; //@ts-ignore
+    let info = await db.externalOrder.findMany({ where: { userId: user2.id } });
+    res.send(info);
+  } catch(err) {
+    return res.sendStatus(404).json({ message: err });
+  }
+  
 });
 
 externalOrderRouter.get<{}, {}>("/getSellOrders", async (req, res) => {
-  let user2 = req.user; //@ts-ignore
-  let info = await db.extractionOrder.findMany({ where: { userId: user2.id } });
-  res.send(info);
+  try {
+    if(!req.user) return res.send('No hay usuario logeado'); 
+    let user2 = req.user; //@ts-ignore
+    let info = await db.extractionOrder.findMany({ where: { userId: user2.id } });
+    res.send(info);
+  } catch(err) {
+    return res.sendStatus(404).json({ message: err });
+  }
+  
 });
 
