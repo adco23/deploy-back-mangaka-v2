@@ -180,7 +180,7 @@ externalOrderRouter.get<{}, {}>("/pack", async (req, res) => {
   let packfiltered = pack.filter((e:any) => e.buyprice > 9);
   res.send(packfiltered);
 });
-/*
+
 externalOrderRouter.get<{}, {}>("/getBuyOrders", async (req, res) => {
   let user2 = req.user; //@ts-ignore
   let info = await db.externalOrder.findMany({ where: { userId: user2.id } });
@@ -192,4 +192,4 @@ externalOrderRouter.get<{}, {}>("/getSellOrders", async (req, res) => {
   let info = await db.extractionOrder.findMany({ where: { userId: user2.id } });
   res.send(info);
 });
-*/
+

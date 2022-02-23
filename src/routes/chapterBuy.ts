@@ -114,7 +114,7 @@ internalOrderRouter.post<{}, {}>("/favoritesManga", async (req, res, next) => {
     res.send("You already have this manga in Favorites");
   }
 });
-/*
+
 internalOrderRouter.get<{}, {}>("/getBuyerOrder", async (req, res) => {
   let user2 = req.user; //@ts-ignore
   let info = await db.internalOrder.findMany({ where: { buyerId: user2.id } });
@@ -125,4 +125,3 @@ internalOrderRouter.get<{}, {}>("/getSellerOrder", async (req, res) => {
   let info = await db.internalOrder.findMany({ where: { sellerId: user2.id } });
   res.send(info);
 });
-*/
