@@ -395,8 +395,7 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
 
     try {
       const user = await db.user.findUnique({
-        where: { username: username },
-        include: { created: true },
+        where: { username: username }
       });
       if (!user) return res.send({ message: "User not found" });
       /*
