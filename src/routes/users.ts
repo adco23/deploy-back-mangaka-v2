@@ -3,11 +3,10 @@ import bcrypt from "bcrypt";
 import { db } from "../app";
 import User from "../classes/User";
 import fs from "fs";
+import multer from "multer";
 //@ts-ignore
 import { Role } from '@prisma/client';
 import { isAuthenticated } from "./auth";
-import { deleteToTheList } from "../utils/lists";
-import multer from "multer";
 const upload = multer({
   limits: {
     fileSize: 100000000,
@@ -19,13 +18,19 @@ const upload = multer({
     cb(null, true);
   },
 });
-
 import axios from "axios";
-import passport from "passport";
+import { deleteToTheList, addToTheList } from "../utils/lists";
 export const usersRouter = Router();
 
 usersRouter.get("/", async (req, res) => {
-  const users = await db.user.findMany({});
+  const users = await db.user.findMany({
+    /*
+    where: { created: { some: {} } },
+    include: {
+      created: true,
+    },
+    */
+  });
 
   res.send(users);
 });
@@ -85,51 +90,6 @@ usersRouter.post<
   } catch (error) {
     console.log(error);
     res.status(400).send({ error: "An error creating a user" });
-  }
-});
-
-usersRouter.put(
-  "/user/updateAvatar/:username",
-  upload.single("avatar"),
-  async (req, res) => {
-    let username = req.params.username;
-    let avatar: Buffer;
-    if (!req.file) {
-      return res.status(400).send("Image is required");
-    }
-    avatar = req.file.buffer;
-    try {
-      await db.user.update({
-        where: { username: username },
-        //@ts-ignore
-        data: { avatar: avatar },
-      });
-
-      return res.status(204).send();
-    } catch (error: any) {
-      return res.status(400).send(error);
-    }
-  }
-);
-
-//Testea el avatar del usuario
-usersRouter.get("/avatar/:username", async (req, res, next) => {
-  let { username } = req.params;
-  if (!username) {
-    return res.status(400).send({ message: "Username is required" });
-  }
-  const user = await db.user.findUnique({
-    where: {
-      username: username,
-    },
-  });
-  if (user) {
-    //Enviar el avatar como respuesta en formato jpeg
-    res.setHeader("Content-Type", "image/jpeg");
-    //@ts-ignore
-    res.send(user.avatar);
-  } else {
-    res.status(404).send("User not found");
   }
 });
 
@@ -259,8 +219,6 @@ usersRouter.get<{ id: string }, {}>("/user/:id", async (req, res, next) => {
     });
 
     if (!user) return res.status(404).json({ msg: "Invalid author ID" });
-    if (!user.creatorMode)
-      return res.status(404).json({ msg: "The user is not an author" });
 
     let totalPoints: number = 0;
 
@@ -303,7 +261,6 @@ usersRouter.get("/currentUser", isAuthenticated, async (req, res, next) => {
   res.send(user)
 });
 
-
 usersRouter.post<
   {},
   {},
@@ -340,9 +297,7 @@ usersRouter.post<
       superAdmin = await db.user.create({
         data: newUser,
       });
-      return res.send("Super Mangaka creado")
     }
-    return res.send("Super Mangaka ya existe")
   } catch (err) {
     console.log(err);
   }
@@ -374,7 +329,7 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           role: user.role === "USER" ? "ADMIN" : "USER",
         },
       });
-      return res.send(`Rol of ${username} change`);
+      return res.send(upsertUser);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
@@ -395,15 +350,16 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
 
     try {
       const user = await db.user.findUnique({
-        where: { username: username }
+        where: { username: username },
+        include: { created: true },
       });
       if (!user) return res.send({ message: "User not found" });
-      /*
+
       user.created.forEach((manga:any) => {
         manga.active = true;
       });
       user.created.forEach((manga:any) => console.log(manga.active));
-      */
+
       const upsertUser = await db.user.update({
         where: {
           username: username,
@@ -412,75 +368,76 @@ usersRouter.put<{ admin: boolean; username: string }, {}>(
           active: user?.active === true ? false : true,
         },
       });
-      return res.send(`${username} active is ${upsertUser.active}`);
+      return res.send(upsertUser);
     } catch (error) {
       return res.sendStatus(404).json({ message: error });
     }
   });
 
 
+//
+//
 
+usersRouter.put<{ id: string, list: string }, {}>("/user/lists", isAuthenticated, async (req, res) => {
+  // const { id } = req.params;
+  //@ts-ignore
+  const id = req.user.id
+  const { list } = req.query;
+  const mangaId = Number(req.body.mangaId);
 
-  usersRouter.put<{ id: string, list: string }, {}>("/user/lists", isAuthenticated, async (req, res) => {
-    // const { id } = req.params;
+  if (list !== "library" && list !== "favorites" && list !== "wishList") return res.status(400).send({ msg: "Invalid list name" });
+  try {
     //@ts-ignore
-    const id = req.user.id
-    const { list } = req.query;
-    const mangaId = Number(req.body.mangaId);
-  
-    if (list !== "library" && list !== "favorites" && list !== "wishList") return res.status(400).send({ msg: "Invalid list name" });
-    try {
+    if (req.user[list].includes(mangaId)) {
       //@ts-ignore
-      if (req.user[list].includes(mangaId)) {
-        //@ts-ignore
-        let mangasList = await deleteToTheList(id, list, mangaId, req.user[list]);
-        return (mangasList.length === 0) ?
-          res.send({ msg: "Empty list" }) : res.send({ msg: "Delete manga to the list" })
-      } else {
-        //@ts-ignore
-        let mangasList = await addToTheList(id, list, mangaId, req.user[list]);
-        return (mangasList.length === 0) ?
-          res.send({ msg: "Empty list" }) : res.send({ msg: "Add manga to the list" })
-      }
-    } catch (error: any) {
-      console.log("Delete manga from list: ", error)
-      return res.status(400).send({ error: error.message })
+      let mangasList = await deleteToTheList(id, list, mangaId, req.user[list]);
+      return (mangasList.length === 0) ?
+        res.send({ msg: "Empty list" }) : res.send({ msg: "Delete manga to the list" })
+    } else {
+      //@ts-ignore
+      let mangasList = await addToTheList(id, list, mangaId, req.user[list]);
+      return (mangasList.length === 0) ?
+        res.send({ msg: "Empty list" }) : res.send({ msg: "Add manga to the list" })
     }
-  });
+  } catch (error: any) {
+    console.log("Delete manga from list: ", error)
+    return res.status(400).send({ error: error.message })
+  }
+});
 
-  usersRouter.get("/popularAuthors", async (req, res) => {
+usersRouter.get("/popularAuthors", async (req, res) => {
 
-    try {
-      let authorsDB = await db.user.findMany({
-        where: {
-          creatorMode: true,
-        },
-        select: {
-          id: true, name: true, avatar: true, created: {
-            select: {
-              rating: true,
-            }
+  try {
+    let authorsDB = await db.user.findMany({
+      where: {
+        creatorMode: true,
+      },
+      select: {
+        id: true, name: true, avatar: true, created: {
+          select: {
+            rating: true,
           }
-        },
-      });
-  
-      const authorsRating: any = authorsDB.map((author:any) => {
-        return {
-          id: author.id,
-          avatar: author.avatar,
-          name: author.name,
-          rating: Number(((author.created.map((elto:any) => elto.rating).reduce((acum:any, actu:any) => acum += actu)) / author.created.length).toFixed(2))
         }
-      });
-  
-      authorsRating.sort((a: any, b: any) => {
-        if (a.rating > b.rating) return -1;
-        if (a.rating < b.rating) return 1;
-      })
-  
-      res.send({ data: authorsRating.slice(0, 11) })
-    } catch (error: any) {
-      console.log("Popular authors: ", error)
-      return res.status(400).send({ error: error.message })
-    }
-  });
+      },
+    });
+
+    const authorsRating: any = authorsDB.map((author:any) => {
+      return {
+        id: author.id,
+        avatar: author.avatar,
+        name: author.name,
+        rating: Number(((author.created.map((elto:any) => elto.rating).reduce((acum:any, actu:any) => acum += actu)) / author.created.length).toFixed(2))
+      }
+    });
+
+    authorsRating.sort((a: any, b: any) => {
+      if (a.rating > b.rating) return -1;
+      if (a.rating < b.rating) return 1;
+    })
+
+    res.send({ data: authorsRating.slice(0, 11) })
+  } catch (error: any) {
+    console.log("Popular authors: ", error)
+    return res.status(400).send({ error: error.message })
+  }
+});
