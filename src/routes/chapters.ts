@@ -20,21 +20,21 @@ export const chaptersRouter = Router();
 // Creacion de un chapter
 chaptersRouter.post<{}, {}>(
   "/",
-  // isAuthenticated,
+  isAuthenticated,
   upload.fields([
     { name: "portada", maxCount: 1 },
     { name: "chapters", maxCount: 100 },
   ]),
   async (req, res, next) => {
     const { title, mangaId, price } = req.body;
-    console.log('MULTER');
+    //console.log('MULTER');
     //@ts-ignore
-    console.log(req.files.chapters)
+    //console.log(req.files.chapters)
     //@ts-ignore
-    // const Authorship = req.user.created.find((c) => c.id === Number(mangaId));
-    // if (!Authorship) {
-    //   return res.status(400).send({ msg: "You not have permission to create a chapter in this manga" });
-    // }
+    const Authorship = req.user.created.find((c) => c.id === Number(mangaId));
+    if (!Authorship) {
+      return res.status(400).send({ msg: "You not have permission to create a chapter in this manga" });
+    }
     //@ts-ignore
     let images: Buffer[] = [];
     let cover: Buffer;

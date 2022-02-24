@@ -12,6 +12,7 @@ export async function paginated(
   let mangas: Manga[] = [];
   let totalMangas: number = await db.manga.count({
     where: {
+      active:true,
       genre: {
         hasEvery: filter,
       },
